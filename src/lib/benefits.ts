@@ -16,6 +16,7 @@ export type BenefitItem = {
   updated_at: string;
   benefit_frequency?: string;
   company_overview?: string;
+  benefit_intro_comment?: string;
   record_date?: string;
   usage_method?: string;
   change_history?: string;
@@ -517,6 +518,209 @@ export function formatPrice(value?: string) {
   }
 
   return `¥${Number(digits).toLocaleString("ja-JP")}`;
+}
+
+function cleanText(value?: string) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim();
+}
+
+function getBenefitCommentMarker(text: string) {
+  const markers = ["株主優待は、", "株主優待は", "優待内容は、", "優待内容は", "優待は、", "優待は"];
+
+  for (const marker of markers) {
+    const index = text.indexOf(marker);
+
+    if (index >= 0) {
+      return { index, marker };
+    }
+  }
+
+  return null;
+}
+
+function joinJapaneseList(values: string[]) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  if (values.length === 2) {
+    return `${values[0]}と${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join("、")}、${values.at(-1)}`;
+}
+
+function stripBenefitRowPrefix(text: string) {
+  return text
+    .replace(/^◎\s*/, "")
+    .replace(/^▼\s*/, "")
+    .replace(/^【/, "")
+    .replace(/】$/, "")
+    .replace(/^＜/, "")
+    .replace(/＞$/, "")
+    .trim();
+}
+
+function hasValue(value?: string) {
+  return cleanText(value) !== "";
+}
+
+function describeMetric(label: string, value?: string) {
+  const text = cleanText(value);
+  return text ? `${label}${text}` : "";
+}
+
+function getBenefitDetailHighlights(item: BenefitItem, maxItems = 8) {
+  return parseBenefitDetails(item.benefit_details)
+    .flatMap((block) => {
+      const labels = block.label ? [stripBenefitRowPrefix(block.label)] : [];
+      const rows = block.rows
+        .filter((row) => row.type !== "note")
+        .map((row) => stripBenefitRowPrefix(row.text))
+        .filter((text) => text.length <= 48)
+        .filter(Boolean);
+
+      return [...labels, ...rows];
+    })
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+const MANUAL_BENEFIT_INTRO_COMMENTS = new Map<string, string>([
+  [
+    "2337",
+    [
+      "いちごの株主優待は、金額換算しやすいQUOカードや買物券とは少し違って、Jリーグの試合を楽しめる体験型の内容になっているのが大きな特徴です。いちごはJリーグのトップパートナーで、地域とスポーツを通じたまちづくりを応援している企業でもあります。その取り組みがそのまま株主優待にもつながっていて、J1・J2・J3を含む全クラブ・全試合を対象にした抽選式の優待へ応募できます。",
+      "この優待は、1株から応募権利を持てる点がまず目を引きます。最低取得額も比較的抑えやすく、優待投資を気軽に試してみたい人でも手を伸ばしやすい部類です。一方で、内容は「必ず何かが届く」タイプではなく、応募して当選した場合に観戦チケットを受け取れる仕組みです。そのため、一般的な優待のように額面で単純比較するよりも、サッカー観戦そのものを楽しみたいか、Jリーグに関心があるかという視点で見ると、この優待の魅力が自然に伝わってきます。",
+      "公式の案内では、対象期末時点の株主を対象に、一定期間にわたって応募できる形が採られています。試合日ごとにJ1・J2・J3それぞれのリーグから応募できるため、観戦したい試合を選ぶ楽しさがある一方、抽選式であることはきちんと意識しておきたいところです。確実に受け取れる優待ではありませんが、そのぶん『好きなクラブの試合を見に行けるかもしれない』という期待感を含めて楽しむタイプの優待だといえます。",
+      "いちごという会社自体も、不動産を軸にしながら地域活性化やサステナブルな社会づくりに力を入れている企業です。そうした会社の姿勢と、地域密着型のJリーグを応援する優待内容はかなり相性が良く、単なる販促的な優待というより、企業の考え方が伝わる制度として見ると印象が変わります。数字だけでお得さを測る優待ではないものの、サッカーが好きな人や、体験型の株主優待に魅力を感じる人には、かなり個性のある銘柄として映りそうです。",
+      "実際に検討するときは、最新の応募期間や対象条件、抽選方法などを公式IRで確認しておくと安心です。それでも、少額から参加しやすく、企業カラーも感じやすい優待という意味では、いちごならではの面白さがある内容です。日用品の節約というより、好きな分野を株主優待を通じて楽しみたい人に向いた一銘柄として見ておくと、しっくりきやすいと思います。",
+    ].join("\n\n"),
+  ],
+]);
+
+function getUsageDescription(item: BenefitItem) {
+  const usageMethod = cleanText(item.usage_method);
+
+  if (usageMethod) {
+    return `利用方法については、${usageMethod}と案内されています。対象サービスや細かな条件は、公式案内もあわせて確認しておきたいところです。`;
+  }
+
+  return "";
+}
+
+function buildExpandedBenefitIntroComment(item: BenefitItem, directComment: string) {
+  const usageDescription = getUsageDescription(item);
+
+  if (directComment) {
+    return [
+      directComment,
+      usageDescription,
+      "実際に取得を検討する際は、最新のIR資料や適時開示で、優待内容や条件の更新有無を確認しておくと安心です。",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  const categories = getCategories(item);
+  const categoryText = categories.length > 0 ? categories.join(" / ") : "株主優待";
+  const benefitValue = hasValue(item.benefit_value) ? formatPrice(item.benefit_value) : "";
+  const minimumShares = cleanText(item.minimum_shares);
+  const benefitYield = hasValue(item.benefit_yield) ? formatPercent(item.benefit_yield) : "";
+  const dividendYield = hasValue(item.dividend_yield_forecast || item.forecast_dividend_yield)
+    ? formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield)
+    : "";
+  const totalYield = hasValue(item.total_yield_forecast || item.forecast_total_yield)
+    ? formatPercent(item.total_yield_forecast || item.forecast_total_yield)
+    : "";
+  const month = item.record_month || "未定";
+  const recordDate = formatJapaneseDate(item.record_date);
+  const frequency = item.benefit_frequency || "年1回";
+  const longTerm = item.long_term_holding_requirement
+    ? `${item.long_term_holding_requirement}が条件として設定されています。`
+    : "";
+  const detailHighlights = getBenefitDetailHighlights(item, 10);
+  const conditionParts = [
+    `権利確定月は${month}`,
+    recordDate !== "-" ? `権利確定日は${recordDate}` : "",
+    minimumShares ? `必要株数は${minimumShares}株` : "",
+    frequency ? `実施回数は${frequency}` : "",
+    describeMetric("優待の価値の目安は", benefitValue),
+    describeMetric("優待利回りは", benefitYield),
+    describeMetric("配当利回り（予想）は", dividendYield),
+    describeMetric("総合利回り（予想）は", totalYield),
+  ].filter(Boolean);
+  const conditionSummary = conditionParts.join("、");
+
+  const detailSummary = detailHighlights.length > 0
+    ? `優待内容としては、${detailHighlights.join("、")}などの記載があります。細かな対象や株数条件は、公式案内とあわせて確認しておくと把握しやすくなります。`
+    : `優待内容は${categoryText}に分類されるもので、具体的な対象や条件は公式資料で確認しておきたい内容です。`;
+
+  const paragraphs = [
+    `${item.company_name}の株主優待は、${categoryText}に分類される内容です。以下では、取得条件や優待内容の要点を整理しています。`,
+    `${conditionSummary}が基本条件です。${longTerm}`,
+    detailSummary,
+    usageDescription,
+    "実際に取得を検討する際は、最新のIR資料や適時開示で、優待内容や条件の更新有無を確認しておくと安心です。",
+  ];
+
+  return paragraphs.filter(Boolean).join("\n\n");
+}
+
+export function getCompanyOverviewSections(item: BenefitItem) {
+  const companyOverview = cleanText(item.company_overview);
+  const benefitIntroComment = cleanText(item.benefit_intro_comment);
+
+  if (benefitIntroComment) {
+    return {
+      companyOverview,
+      benefitComment: benefitIntroComment,
+    };
+  }
+
+  const source = companyOverview;
+
+  if (!source) {
+    return {
+      companyOverview: "",
+      benefitComment: "",
+    };
+  }
+
+  const marker = getBenefitCommentMarker(source);
+
+  if (!marker) {
+    return {
+      companyOverview: source,
+      benefitComment: "",
+    };
+  }
+
+  return {
+    companyOverview: source.slice(0, marker.index).trim(),
+    benefitComment: source.slice(marker.index).trim(),
+  };
+}
+
+export function getBenefitIntroComment(item: BenefitItem) {
+  const manualComment = MANUAL_BENEFIT_INTRO_COMMENTS.get(item.company_code);
+
+  if (manualComment) {
+    return manualComment;
+  }
+
+  const directComment = cleanText(item.benefit_intro_comment);
+  const { benefitComment } = getCompanyOverviewSections(item);
+  const baseComment = directComment || benefitComment;
+
+  return buildExpandedBenefitIntroComment(item, baseComment);
 }
 
 export function formatPercent(value?: string) {
