@@ -1,0 +1,95 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import IconHeading from "../components/IconHeading.astro";
+
+const pageTitle = "免責事項 | よくわかる株主優待";
+const pageDescription = "よくわかる株主優待の掲載情報に関する免責事項を掲載しています。";
+const canonical = "https://kabu-yutai.net/disclaimer/";
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} canonical={canonical}>
+  <section class="page-header">
+    <IconHeading level="h1" text="免責事項" variant="detail" />
+    <p>掲載情報の利用にあたってご確認いただきたい事項をまとめています。</p>
+  </section>
+
+  <section class="policy-card">
+    <div class="policy-block">
+      <h2>1. 情報の正確性について</h2>
+      <p>当サイトでは、株主優待、権利確定月、最低取得額、利回り等の情報をできる限り正確に掲載するよう努めていますが、その完全性、正確性、最新性を保証するものではありません。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>2. 投資判断について</h2>
+      <p>当サイトに掲載する内容は、情報提供を目的としたものであり、特定銘柄の購入、売却、保有継続等を勧誘するものではありません。最終的な投資判断は、ご自身の責任と判断で行ってください。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>3. 損害等の責任</h2>
+      <p>当サイトの情報を利用したことにより生じたいかなる損害、損失、トラブルについても、当サイト運営者は責任を負いません。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>4. 外部リンクについて</h2>
+      <p>当サイトは、参考情報として外部サイトへのリンクを掲載する場合があります。リンク先の内容、サービス、正確性等について当サイトは責任を負いません。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>5. 掲載数値について</h2>
+      <p>優待内容、最低取得額、利回り、権利確定月等の数値は、基準日や参照元の更新状況によって変動する場合があります。実際の投資にあたっては、必ず発行会社や証券会社等の最新情報をご確認ください。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>6. 情報の変更・停止</h2>
+      <p>当サイトに掲載している内容は、予告なく変更、修正、削除することがあります。また、サイト運営を一時停止または終了する場合があります。</p>
+    </div>
+
+    <div class="policy-block">
+      <h2>7. アフィリエイト等について</h2>
+      <p>今後、当サイトで広告、アフィリエイトリンク、提携サービスの紹介等を行う場合があります。その場合でも、掲載方針や評価基準は当サイトの判断に基づきます。</p>
+    </div>
+
+    <p class="updated">制定日: 2026年4月4日 / 最終更新日: 2026年4月4日</p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 8px 0 28px;
+    max-width: 820px;
+  }
+
+  .page-header p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .policy-card {
+    padding: 28px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+  }
+
+  .policy-block + .policy-block {
+    margin-top: 28px;
+  }
+
+  .policy-block h2 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    line-height: 1.4;
+  }
+
+  .policy-block p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .updated {
+    margin: 32px 0 0;
+    color: var(--soft);
+    font-size: 14px;
+  }
+</style>

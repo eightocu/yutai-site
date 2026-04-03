@@ -57,6 +57,11 @@ const {
 
     <footer class="site-footer">
       <div class="container">
+        <nav class="footer-nav" aria-label="フッターメニュー">
+          <a href="/privacy-policy/">プライバシーポリシー</a>
+          <a href="/disclaimer/">免責事項</a>
+          <a href="/about/">運営者情報</a>
+        </nav>
         <p>© よくわかる株主優待</p>
       </div>
     </footer>
@@ -157,6 +162,23 @@ const {
 
   .site-footer p {
     margin: 0;
+  }
+
+  .footer-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-nav a {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .footer-nav a:hover {
+    color: var(--text);
   }
 
   .site-header a {
