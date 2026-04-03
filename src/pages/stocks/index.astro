@@ -1,0 +1,629 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import IconHeading from "../../components/IconHeading.astro";
+import {
+  formatPercent,
+  formatPrice,
+  getAllBenefits,
+  parsePercentValue,
+} from "../../lib/benefits";
+import companyNameReadings from "../../data/company_name_readings.json";
+
+const GROUP_ORDER = [
+  "あ",
+  "い",
+  "う",
+  "え",
+  "お",
+  "か",
+  "き",
+  "く",
+  "け",
+  "こ",
+  "さ",
+  "し",
+  "す",
+  "せ",
+  "そ",
+  "た",
+  "ち",
+  "つ",
+  "て",
+  "と",
+  "な",
+  "に",
+  "ぬ",
+  "ね",
+  "の",
+  "は",
+  "ひ",
+  "ふ",
+  "へ",
+  "ほ",
+  "ま",
+  "み",
+  "む",
+  "め",
+  "も",
+  "や",
+  "ゆ",
+  "よ",
+  "ら",
+  "り",
+  "る",
+  "れ",
+  "ろ",
+  "わ",
+  ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  "その他",
+];
+
+const KANA_NAV_GROUPS = [
+  { label: "あ行", items: ["あ", "い", "う", "え", "お"] },
+  { label: "か行", items: ["か", "き", "く", "け", "こ"] },
+  { label: "さ行", items: ["さ", "し", "す", "せ", "そ"] },
+  { label: "た行", items: ["た", "ち", "つ", "て", "と"] },
+  { label: "な行", items: ["な", "に", "ぬ", "ね", "の"] },
+  { label: "は行", items: ["は", "ひ", "ふ", "へ", "ほ"] },
+  { label: "ま行", items: ["ま", "み", "む", "め", "も"] },
+  { label: "や行", items: ["や", "ゆ", "よ"] },
+  { label: "ら行", items: ["ら", "り", "る", "れ", "ろ"] },
+  { label: "わ行", items: ["わ"] },
+];
+const ALPHABET_NAV_ITEMS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+function getGroupLabel(name: string) {
+  const first = name.trim().charAt(0).toLowerCase();
+
+  if (/^[a-z]$/.test(first)) {
+    return first.toUpperCase();
+  }
+
+  const reading = (companyNameReadings[name] || "").toLowerCase();
+  const normalized = reading.replace(/[^a-z]/g, "");
+
+  if (!normalized) {
+    return "その他";
+  }
+
+  if (/^(a)/.test(normalized)) return "あ";
+  if (/^(i|yi)/.test(normalized)) return "い";
+  if (/^(u|wu|vu|wh)/.test(normalized)) return "う";
+  if (/^(e)/.test(normalized)) return "え";
+  if (/^(o)/.test(normalized)) return "お";
+  if (/^(ka|ga|ca)/.test(normalized)) return "か";
+  if (/^(ki|kya|kyu|kyo|gi|gya|gyu|gyo)/.test(normalized)) return "き";
+  if (/^(ku|gu|qu|kwa|gwa)/.test(normalized)) return "く";
+  if (/^(ke|ge)/.test(normalized)) return "け";
+  if (/^(ko|go|co)/.test(normalized)) return "こ";
+  if (/^(sa|za)/.test(normalized)) return "さ";
+  if (/^(shi|si|ji|zi|je|jye|sha|shu|sho|ja|ju|jo)/.test(normalized)) return "し";
+  if (/^(su|zu)/.test(normalized)) return "す";
+  if (/^(se|ze|ce)/.test(normalized)) return "せ";
+  if (/^(so|zo)/.test(normalized)) return "そ";
+  if (/^(ta|da)/.test(normalized)) return "た";
+  if (/^(chi|ti|cha|chu|cho|che|di|dhi)/.test(normalized)) return "ち";
+  if (/^(tsu|tu|du)/.test(normalized)) return "つ";
+  if (/^(te|de)/.test(normalized)) return "て";
+  if (/^(to|do)/.test(normalized)) return "と";
+  if (/^(na|nya|nyu|nyo)/.test(normalized)) return "な";
+  if (/^(ni)/.test(normalized)) return "に";
+  if (/^(nu)/.test(normalized)) return "ぬ";
+  if (/^(ne)/.test(normalized)) return "ね";
+  if (/^(no)/.test(normalized)) return "の";
+  if (/^(ha|ba|pa)/.test(normalized)) return "は";
+  if (/^(hi|hya|hyu|hyo|bi|bya|byu|byo|pi|pya|pyu|pyo)/.test(normalized)) return "ひ";
+  if (/^(fu|hu|fa|fi|fe|fo|fyu|fwa|bu|pu)/.test(normalized)) return "ふ";
+  if (/^(he|be|pe)/.test(normalized)) return "へ";
+  if (/^(ho|bo|po)/.test(normalized)) return "ほ";
+  if (/^(ma|mya|myu|myo)/.test(normalized)) return "ま";
+  if (/^(mi)/.test(normalized)) return "み";
+  if (/^(mu)/.test(normalized)) return "む";
+  if (/^(me)/.test(normalized)) return "め";
+  if (/^(mo)/.test(normalized)) return "も";
+  if (/^(ya)/.test(normalized)) return "や";
+  if (/^(yu)/.test(normalized)) return "ゆ";
+  if (/^(yo)/.test(normalized)) return "よ";
+  if (/^(ra|rya|ryu|ryo)/.test(normalized)) return "ら";
+  if (/^(ri)/.test(normalized)) return "り";
+  if (/^(ru)/.test(normalized)) return "る";
+  if (/^(re)/.test(normalized)) return "れ";
+  if (/^(ro)/.test(normalized)) return "ろ";
+  if (/^(wa)/.test(normalized)) return "わ";
+
+  return "その他";
+}
+
+const benefits = getAllBenefits();
+const groupedBenefits = GROUP_ORDER.map((label) => ({
+  label,
+  items: benefits
+    .filter((item) => getGroupLabel(item.company_name || "") === label)
+    .sort((a, b) => a.company_name.localeCompare(b.company_name, "ja")),
+}));
+const kanaIndexLabels = GROUP_ORDER.slice(0, 44);
+const alphabetIndexLabels = GROUP_ORDER.slice(44, 70);
+const otherIndexLabels = GROUP_ORDER.slice(70);
+
+const pageTitle = "株主優待一覧 | よくわかる株主優待";
+const pageDescription = "全銘柄の株主優待を一覧で確認できます。企業名、証券コード、権利確定月、最低取得額などをまとめています。";
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <section class="page-header">
+    <IconHeading level="h1" text="株主優待一覧" variant="list" />
+    <p>全銘柄の株主優待を一覧で確認できます。</p>
+    <div class="count-pill">掲載銘柄数 {benefits.length}件</div>
+  </section>
+
+  <div class="stocks-layout">
+    <aside class="index-panel">
+      <IconHeading text="索引" variant="bookmark" />
+
+      <div class="index-section">
+        <p class="index-title">五十音</p>
+        <div class="index-kana">
+          {KANA_NAV_GROUPS.map((group) => (
+            <div class="index-kana-row">
+              {group.items.map((label) => (
+                <a href={`#group-${label}`}>{label}</a>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="index-section">
+        <p class="index-title">アルファベット</p>
+        <div class="index-alpha">
+          {ALPHABET_NAV_ITEMS.map((label) => (
+            <a href={`#group-${label}`}>{label}</a>
+          ))}
+        </div>
+      </div>
+
+      <div class="index-section">
+        <p class="index-title">そのほか</p>
+        <div class="index-alpha">
+          {otherIndexLabels.map((label) => (
+            <a href={`#group-${label}`}>{label}</a>
+          ))}
+        </div>
+      </div>
+    </aside>
+
+    <section class="results-panel">
+      <div class="results-head">
+        <IconHeading text="企業一覧" variant="list" />
+        <div class="results-head-meta">
+          <p>{benefits.length}件掲載しています。</p>
+          <label class="sort-control">
+            <span>並べ替え</span>
+            <select id="stocks-sort">
+              <option value="company">会社名順</option>
+              <option value="amount">必要金額順</option>
+              <option value="benefitYield">優待利回り順</option>
+              <option value="totalYield">総合利回り順</option>
+              <option value="dividendYield">配当利回り順</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {groupedBenefits.map((group) => (
+        <section class="stock-group" id={`group-${group.label}`}>
+          <div class="group-heading">
+            <h3>{group.label}</h3>
+            <p>{group.items.length}件</p>
+          </div>
+
+          {group.items.length > 0 ? (
+            <div class="results-grid">
+              {group.items.map((item) => (
+                <a
+                  class="result-card"
+                  href={`/stocks/${item.company_code}/`}
+                  data-company-name={item.company_name}
+                  data-amount={Number(item.minimum_purchase_amount || "") || 0}
+                  data-benefit-yield={parsePercentValue(item.benefit_yield) ?? -1}
+                  data-total-yield={parsePercentValue(item.total_yield_forecast || item.forecast_total_yield) ?? -1}
+                  data-dividend-yield={parsePercentValue(item.dividend_yield_forecast || item.forecast_dividend_yield) ?? -1}
+                >
+                  <div class="result-top">
+                    <p class="result-code">{item.company_code}</p>
+                    <p class="result-month">{item.record_month || "-"}</p>
+                  </div>
+                  <h4>{item.company_name}</h4>
+                  <p class="result-category">{item.benefit_category || "-"}</p>
+                  <dl class="result-meta">
+                    <div>
+                      <dt>最低取得額</dt>
+                      <dd>{formatPrice(item.minimum_purchase_amount)}</dd>
+                    </div>
+                    <div>
+                      <dt>優待の価値</dt>
+                      <dd>{formatPrice(item.benefit_value)}</dd>
+                    </div>
+                    <div>
+                      <dt>優待利回り</dt>
+                      <dd>{formatPercent(item.benefit_yield)}</dd>
+                    </div>
+                    <div>
+                      <dt>配当利回り</dt>
+                      <dd>{formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield)}</dd>
+                    </div>
+                  </dl>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p class="empty-group">該当する銘柄はありません。</p>
+          )}
+        </section>
+      ))}
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const sortSelect = document.querySelector("#stocks-sort");
+
+  if (sortSelect) {
+    const collator = new Intl.Collator("ja");
+
+    const sortAllGroups = () => {
+      const grids = Array.from(document.querySelectorAll(".results-grid"));
+      const sortKey = sortSelect.value;
+
+      grids.forEach((grid) => {
+        const cards = Array.from(grid.querySelectorAll(".result-card"));
+
+        cards.sort((left, right) => {
+          if (sortKey === "company") {
+            return collator.compare(
+              left.dataset.companyName || "",
+              right.dataset.companyName || "",
+            );
+          }
+
+          const keyMap = {
+            amount: "amount",
+            benefitYield: "benefitYield",
+            totalYield: "totalYield",
+            dividendYield: "dividendYield",
+          };
+
+          const key = keyMap[sortKey];
+          const leftValue = Number(left.dataset[key] || -1);
+          const rightValue = Number(right.dataset[key] || -1);
+
+          if (rightValue !== leftValue) {
+            return sortKey === "amount" ? leftValue - rightValue : rightValue - leftValue;
+          }
+
+          return collator.compare(
+            left.dataset.companyName || "",
+            right.dataset.companyName || "",
+          );
+        });
+
+        cards.forEach((card) => grid.appendChild(card));
+      });
+    };
+
+    sortSelect.addEventListener("change", sortAllGroups);
+  }
+</script>
+
+<style>
+  .page-header {
+    padding: 8px 0 30px;
+    max-width: 760px;
+  }
+
+  .page-header h1 {
+    margin: 0 0 10px;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .page-header p {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .count-pill {
+    display: inline-flex;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .stocks-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .index-panel,
+  .results-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .index-panel {
+    position: sticky;
+    top: 104px;
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    padding: 22px;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .results-panel {
+    padding: 24px;
+    position: sticky;
+    top: 104px;
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .index-panel h2,
+  .results-head h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  .index-section + .index-section {
+    margin-top: 22px;
+  }
+
+  .index-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--soft);
+  }
+
+  .index-kana {
+    display: grid;
+    gap: 12px;
+  }
+
+  .index-kana-row,
+  .index-alpha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .index-panel a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-soft);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .index-panel a:hover {
+    border-color: var(--line-strong);
+    color: var(--text);
+  }
+
+  .results-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .results-head-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .results-head p {
+    margin: 0;
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .sort-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--soft);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .sort-control select {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .stock-group + .stock-group {
+    margin-top: 36px;
+  }
+
+  .group-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .group-heading h3 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--text);
+  }
+
+  .group-heading p {
+    margin: 0;
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .result-card {
+    display: block;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: inherit;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+    min-width: 0;
+  }
+
+  .result-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .result-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .result-card h4 {
+    margin: 10px 0 8px;
+    font-size: 24px;
+    color: var(--text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-code {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  .result-month {
+    margin: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .result-category {
+    margin: 0 0 18px;
+    color: var(--muted);
+    min-height: 3.8em;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+  }
+
+  .result-meta div {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  dt {
+    font-size: 12px;
+    color: var(--soft);
+    margin-bottom: 4px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .empty-group {
+    margin: 0;
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  @media (max-width: 720px) {
+    .stocks-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .index-panel {
+      position: static;
+      height: auto;
+      overflow: visible;
+    }
+
+    .results-panel {
+      position: static;
+      height: auto;
+      overflow: visible;
+    }
+
+    .index-panel a {
+      min-width: 34px;
+      min-height: 32px;
+      padding: 0 9px;
+      font-size: 13px;
+    }
+
+    .results-head {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .results-head-meta {
+      justify-content: space-between;
+    }
+  }
+</style>

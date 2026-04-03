@@ -1,0 +1,310 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import IconHeading from "../../components/IconHeading.astro";
+import {
+  formatPercent,
+  formatPrice,
+  getAllBenefits,
+  parsePercentValue,
+} from "../../lib/benefits";
+
+export async function getStaticPaths() {
+  const benefits = getAllBenefits();
+
+  const monthSet = new Set<string>();
+
+  for (const item of benefits) {
+    if (!item.record_month) continue;
+
+    const matches = item.record_month.match(/\d+/g);
+    if (!matches) continue;
+
+    for (const month of matches) {
+      monthSet.add(month);
+    }
+  }
+
+  return Array.from(monthSet)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((month) => ({
+      params: { month },
+      props: { month },
+    }));
+}
+
+const { month } = Astro.props;
+const benefits = getAllBenefits().filter((item) => {
+  if (!item.record_month) return false;
+  const matches = item.record_month.match(/\d+/g);
+  return matches ? matches.includes(month) : false;
+});
+
+const pageTitle = `${month}月権利確定の株主優待一覧 | よくわかる株主優待`;
+const pageDescription = `${month}月に権利確定する株主優待銘柄を一覧で確認できます。企業名、証券コード、優待カテゴリ、最低取得額などをまとめています。`;
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <section class="page-header">
+    <IconHeading level="h1" text={`${month}月権利確定の株主優待一覧`} variant="calendar" />
+    <p>{month}月に権利確定する銘柄をまとめています。</p>
+    <div class="page-actions">
+      <div class="count-pill">掲載銘柄数 {benefits.length}件</div>
+      <label class="sort-control">
+        <span>並べ替え</span>
+        <select id="month-sort">
+          <option value="company">会社名順</option>
+          <option value="amount">必要金額順</option>
+          <option value="benefitYield">優待利回り順</option>
+          <option value="totalYield">総合利回り順</option>
+          <option value="dividendYield">配当利回り順</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="results-grid" id="month-results">
+    {benefits.map((item) => (
+      <a
+        class="result-card"
+        href={`/stocks/${item.company_code}/`}
+        data-company-name={item.company_name}
+        data-amount={Number(item.minimum_purchase_amount || "") || 0}
+        data-benefit-yield={parsePercentValue(item.benefit_yield) ?? -1}
+        data-total-yield={parsePercentValue(item.total_yield_forecast || item.forecast_total_yield) ?? -1}
+        data-dividend-yield={parsePercentValue(item.dividend_yield_forecast || item.forecast_dividend_yield) ?? -1}
+      >
+        <div class="result-top">
+          <p class="result-code">{item.company_code}</p>
+          <p class="result-month">{item.record_month || "-"}</p>
+        </div>
+        <h2>{item.company_name}</h2>
+        <p class="result-category">{item.benefit_category || "-"}</p>
+        <dl class="result-meta">
+          <div>
+            <dt>必要金額</dt>
+            <dd>{formatPrice(item.minimum_purchase_amount)}</dd>
+          </div>
+          <div>
+            <dt>優待利回り</dt>
+            <dd>{formatPercent(item.benefit_yield)}</dd>
+          </div>
+          <div>
+            <dt>総合利回り</dt>
+            <dd>{formatPercent(item.total_yield_forecast || item.forecast_total_yield)}</dd>
+          </div>
+          <div>
+            <dt>配当利回り</dt>
+            <dd>{formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield)}</dd>
+          </div>
+        </dl>
+      </a>
+    ))}
+  </section>
+</BaseLayout>
+
+<script>
+  const sortSelect = document.querySelector("#month-sort");
+  const results = document.querySelector("#month-results");
+
+  if (sortSelect && results) {
+    const collator = new Intl.Collator("ja");
+
+    const sortCards = () => {
+      const cards = Array.from(results.querySelectorAll(".result-card"));
+      const sortKey = sortSelect.value;
+
+      cards.sort((left, right) => {
+        if (sortKey === "company") {
+          return collator.compare(
+            left.dataset.companyName || "",
+            right.dataset.companyName || "",
+          );
+        }
+
+        const keyMap = {
+          amount: "amount",
+          benefitYield: "benefitYield",
+          totalYield: "totalYield",
+          dividendYield: "dividendYield",
+        };
+
+        const key = keyMap[sortKey];
+        const leftValue = Number(left.dataset[key] || -1);
+        const rightValue = Number(right.dataset[key] || -1);
+
+        if (rightValue !== leftValue) {
+          return sortKey === "amount" ? leftValue - rightValue : rightValue - leftValue;
+        }
+
+        return collator.compare(
+          left.dataset.companyName || "",
+          right.dataset.companyName || "",
+        );
+      });
+
+      cards.forEach((card) => results.appendChild(card));
+    };
+
+    sortSelect.addEventListener("change", sortCards);
+  }
+</script>
+
+<style>
+  .page-header {
+    padding: 8px 0 30px;
+  }
+
+  .page-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .page-header h1 {
+    margin: 0 0 10px;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .page-header p {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .count-pill {
+    display: inline-flex;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .sort-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--soft);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .sort-control select {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .result-card {
+    display: block;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: inherit;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .result-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .result-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .result-card h2 {
+    margin: 10px 0 8px;
+    font-size: 24px;
+    color: var(--text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-code {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  .result-month {
+    margin: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .result-category {
+    margin: 0 0 18px;
+    color: var(--muted);
+    min-height: 3.8em;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+  }
+
+  .result-meta div {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  dt {
+    font-size: 12px;
+    color: var(--soft);
+    margin-bottom: 4px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  @media (max-width: 640px) {
+    .page-actions {
+      align-items: stretch;
+    }
+
+    .sort-control {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .sort-control select {
+      width: 100%;
+      max-width: 220px;
+    }
+  }
+</style>

@@ -1,0 +1,169 @@
+---
+import IconHeading from "../../components/IconHeading.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatPercent, formatPrice, getAllBenefits } from "../../lib/benefits";
+
+const benefits = getAllBenefits()
+  .filter((item) => {
+    const amount = Number(String(item.minimum_purchase_amount || "").replace(/[^\d]/g, ""));
+    return amount > 0 && amount <= 100000;
+  })
+  .sort((left, right) => {
+    const leftAmount = Number(String(left.minimum_purchase_amount || "").replace(/[^\d]/g, "")) || 0;
+    const rightAmount = Number(String(right.minimum_purchase_amount || "").replace(/[^\d]/g, "")) || 0;
+    return leftAmount - rightAmount || left.company_name.localeCompare(right.company_name, "ja");
+  });
+
+const pageTitle = "10万円以下で探す | よくわかる株主優待";
+const pageDescription = "最低取得額が10万円以下の株主優待銘柄を一覧で確認できます。";
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <section class="page-header">
+    <IconHeading level="h1" text="10万円以下で探す" variant="sparkle" />
+    <p>少額から狙いやすい株主優待銘柄をまとめています。</p>
+    <div class="count-pill">掲載銘柄数 {benefits.length}件</div>
+  </section>
+
+  <section class="results-grid">
+    {benefits.map((item) => (
+      <a class="result-card" href={`/stocks/${item.company_code}/`}>
+        <div class="result-top">
+          <p class="result-code">{item.company_code}</p>
+          <p class="result-month">{item.record_month || "-"}</p>
+        </div>
+        <h2>{item.company_name}</h2>
+        <p class="result-category">{item.benefit_category || "-"}</p>
+        <dl class="result-meta">
+          <div>
+            <dt>最低取得額</dt>
+            <dd>{formatPrice(item.minimum_purchase_amount)}</dd>
+          </div>
+          <div>
+            <dt>優待の価値</dt>
+            <dd>{formatPrice(item.benefit_value)}</dd>
+          </div>
+          <div>
+            <dt>優待利回り</dt>
+            <dd>{formatPercent(item.benefit_yield)}</dd>
+          </div>
+          <div>
+            <dt>配当利回り</dt>
+            <dd>{formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield)}</dd>
+          </div>
+        </dl>
+      </a>
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 8px 0 30px;
+    max-width: 760px;
+  }
+
+  .page-header p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .count-pill {
+    display: inline-flex;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .result-card {
+    display: block;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: inherit;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .result-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .result-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .result-card h2 {
+    margin: 10px 0 8px;
+    font-size: 24px;
+    color: var(--text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-code {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  .result-month {
+    margin: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .result-category {
+    margin: 0 0 18px;
+    color: var(--muted);
+    min-height: 3.8em;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+  }
+
+  .result-meta div {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  dt {
+    font-size: 12px;
+    color: var(--soft);
+    margin-bottom: 4px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+</style>

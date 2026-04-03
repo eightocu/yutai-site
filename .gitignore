@@ -1,5 +1,6 @@
 # build output
 dist/
+
 # generated types
 .astro/
 
@@ -15,10 +16,30 @@ pnpm-debug.log*
 
 # environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
 .env.production
+.env.production.local
+
+# local data and secrets
+*.pem
+*.key
+*.p12
+*.crt
+*.secret
+secrets/
 
 # macOS-specific files
 .DS_Store
 
+# editor files
+.vscode/settings.json
+.vscode/*.code-workspace
+
 # jetbrains setting folder
 .idea/
+
+# temporary files
+*.tmp
+*.temp

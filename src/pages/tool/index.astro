@@ -1,0 +1,418 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import IconHeading from "../../components/IconHeading.astro";
+import {
+  formatPercent,
+  formatPrice,
+  getAllBenefits,
+  getAllCategories,
+  parsePercentValue,
+} from "../../lib/benefits";
+
+const allCategories = getAllCategories();
+const monthOptions = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
+
+const searchIndex = getAllBenefits().map((item) => ({
+  company_code: item.company_code,
+  company_name: item.company_name,
+  benefit_category: item.benefit_category || "",
+  record_month: item.record_month || "",
+  minimum_purchase_amount: Number(item.minimum_purchase_amount || "") || null,
+  minimum_purchase_amount_label: formatPrice(item.minimum_purchase_amount),
+  benefit_value_label: formatPrice(item.benefit_value),
+  benefit_yield_label: formatPercent(item.benefit_yield),
+  dividend_yield_label: formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield),
+  total_yield_forecast: parsePercentValue(item.total_yield_forecast || item.forecast_total_yield),
+  benefit_details: item.benefit_details || "",
+}));
+
+const pageTitle = "株主優待を絞り込み検索 | よくわかる株主優待";
+const pageDescription = "キーワード、権利確定月、カテゴリ、最低取得額、総合利回りから株主優待を絞り込めます。";
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <section class="page-header">
+    <IconHeading level="h1" text="株主優待を絞り込み検索" variant="filter" />
+    <p>条件を組み合わせて、気になる株主優待だけを絞り込めます。</p>
+  </section>
+
+  <div class="tool-layout">
+    <aside class="filter-panel">
+      <IconHeading text="条件を選ぶ" variant="filter" />
+
+      <div class="filter-group">
+        <label for="filter-keyword">キーワード</label>
+        <input id="filter-keyword" type="search" placeholder="企業名・銘柄コード・優待内容" />
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-month">権利確定月</label>
+        <select id="filter-month">
+          <option value="">すべて</option>
+          {monthOptions.map((month) => (
+            <option value={month}>{month}月</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-category">カテゴリ</label>
+        <select id="filter-category">
+          <option value="">すべて</option>
+          {allCategories.map((category) => (
+            <option value={category}>{category}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-amount">最低取得額</label>
+        <select id="filter-amount">
+          <option value="">すべて</option>
+          <option value="100000">10万円以下</option>
+          <option value="300000">30万円以下</option>
+          <option value="500000">50万円以下</option>
+          <option value="1000000">100万円以下</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-yield">総合利回り</label>
+        <select id="filter-yield">
+          <option value="">すべて</option>
+          <option value="1">1%以上</option>
+          <option value="2">2%以上</option>
+          <option value="3">3%以上</option>
+          <option value="5">5%以上</option>
+        </select>
+      </div>
+
+      <button id="reset-filters" type="button" class="reset-button">条件をリセット</button>
+    </aside>
+
+    <section class="results-panel">
+      <div class="results-head">
+        <IconHeading text="検索結果" variant="list" />
+        <p id="results-status">条件を選ぶと結果が表示されます。</p>
+      </div>
+
+      <div id="results-grid" class="results-grid"></div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ searchIndex }}>
+  const params = new URLSearchParams(window.location.search);
+  const keywordInput = document.querySelector("#filter-keyword");
+  const monthSelect = document.querySelector("#filter-month");
+  const categorySelect = document.querySelector("#filter-category");
+  const amountSelect = document.querySelector("#filter-amount");
+  const yieldSelect = document.querySelector("#filter-yield");
+  const resetButton = document.querySelector("#reset-filters");
+  const resultsStatus = document.querySelector("#results-status");
+  const resultsGrid = document.querySelector("#results-grid");
+
+  const controls = [keywordInput, monthSelect, categorySelect, amountSelect, yieldSelect];
+
+  const matchesMonth = (recordMonth, selectedMonth) => {
+    if (!selectedMonth) return true;
+    const months = recordMonth.match(/\d+/g) || [];
+    return months.includes(selectedMonth);
+  };
+
+  const render = () => {
+    const keyword = keywordInput.value.trim().toLowerCase();
+    const month = monthSelect.value;
+    const category = categorySelect.value;
+    const maxAmount = amountSelect.value ? Number(amountSelect.value) : null;
+    const minYield = yieldSelect.value ? Number(yieldSelect.value) : null;
+
+    const matched = searchIndex.filter((item) => {
+      const matchesKeyword = !keyword || [
+        item.company_code,
+        item.company_name,
+        item.benefit_category,
+        item.benefit_details,
+      ]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(keyword));
+
+      const matchesCategory = !category || item.benefit_category.includes(category);
+      const matchesAmount = maxAmount === null || (item.minimum_purchase_amount !== null && item.minimum_purchase_amount <= maxAmount);
+      const matchesYield = minYield === null || (item.total_yield_forecast !== null && item.total_yield_forecast >= minYield);
+
+      return matchesKeyword && matchesMonth(item.record_month, month) && matchesCategory && matchesAmount && matchesYield;
+    }).slice(0, 120);
+
+    resultsStatus.textContent = `${matched.length}件見つかりました。`;
+
+    if (matched.length === 0) {
+      resultsGrid.innerHTML = `<p class="empty-message">条件に合う銘柄は見つかりませんでした。</p>`;
+      return;
+    }
+
+    resultsGrid.innerHTML = matched.map((item) => `
+      <a class="result-card" href="/stocks/${item.company_code}/">
+        <div class="result-top">
+          <p class="result-code">${item.company_code}</p>
+          <p class="result-month">${item.record_month || "-"}</p>
+        </div>
+        <h3>${item.company_name}</h3>
+        <p class="result-category">${item.benefit_category || "-"}</p>
+        <dl class="result-meta">
+          <div>
+            <dt>最低取得額</dt>
+            <dd>${item.minimum_purchase_amount_label || "-"}</dd>
+          </div>
+          <div>
+            <dt>優待の価値</dt>
+            <dd>${item.benefit_value_label || "-"}</dd>
+          </div>
+          <div>
+            <dt>優待利回り</dt>
+            <dd>${item.benefit_yield_label || "-"}</dd>
+          </div>
+          <div>
+            <dt>配当利回り</dt>
+            <dd>${item.dividend_yield_label || "-"}</dd>
+          </div>
+        </dl>
+      </a>
+    `).join("");
+  };
+
+  keywordInput.value = params.get("q") || "";
+  monthSelect.value = params.get("month") || "";
+  categorySelect.value = params.get("category") || "";
+  amountSelect.value = params.get("amount") || "";
+  yieldSelect.value = params.get("yield") || "";
+
+  controls.forEach((control) => {
+    control.addEventListener("input", render);
+    control.addEventListener("change", render);
+  });
+
+  resetButton.addEventListener("click", () => {
+    controls.forEach((control) => {
+      control.value = "";
+    });
+    render();
+  });
+
+  render();
+</script>
+
+<style>
+  .page-header {
+    padding: 8px 0 24px;
+    max-width: 760px;
+  }
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .page-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .tool-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .filter-panel,
+  .results-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .filter-panel {
+    padding: 22px;
+    position: sticky;
+    top: 104px;
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .results-panel {
+    padding: 24px;
+    position: sticky;
+    top: 104px;
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-panel h2,
+  .results-head h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  .filter-group + .filter-group {
+    margin-top: 16px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .reset-button {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 20px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .results-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .results-head p {
+    margin: 0;
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  :global(.result-card) {
+    display: block;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface-soft);
+    color: inherit;
+  }
+
+  :global(.result-card:hover) {
+    border-color: var(--line-strong);
+  }
+
+  :global(.result-top) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  :global(.result-code) {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--soft);
+    letter-spacing: 0.08em;
+  }
+
+  :global(.result-month) {
+    margin: 0;
+    font-size: 13px;
+    color: var(--soft);
+  }
+
+  :global(.result-card h3) {
+    margin: 0 0 8px;
+    font-size: 22px;
+    line-height: 1.45;
+    color: var(--text);
+  }
+
+  :global(.result-category) {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  :global(.result-meta) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+  }
+
+  :global(.result-meta div) {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  :global(.result-meta dt) {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: var(--soft);
+  }
+
+  :global(.result-meta dd) {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  :global(.empty-message) {
+    margin: 0;
+    color: var(--soft);
+  }
+
+  @media (max-width: 900px) {
+    .tool-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-panel {
+      position: static;
+      height: auto;
+      overflow: visible;
+    }
+
+    .results-panel {
+      position: static;
+      height: auto;
+      overflow: visible;
+    }
+  }
+</style>

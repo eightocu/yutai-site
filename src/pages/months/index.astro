@@ -1,0 +1,147 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import IconHeading from "../../components/IconHeading.astro";
+
+const pageTitle = "権利確定月から探す | よくわかる株主優待";
+const pageDescription = "権利確定月ごとに株主優待を探せるページです。気になる月を選んで一覧を確認できます。";
+
+const months = [
+  { label: "1月", href: "/months/1/", icon: "snow", tone: "ice" },
+  { label: "2月", href: "/months/2/", icon: "flower", tone: "blush" },
+  { label: "3月", href: "/months/3/", icon: "leaf", tone: "mint" },
+  { label: "4月", href: "/months/4/", icon: "petal", tone: "rose" },
+  { label: "5月", href: "/months/5/", icon: "sprout", tone: "sage" },
+  { label: "6月", href: "/months/6/", icon: "drop", tone: "sky" },
+  { label: "7月", href: "/months/7/", icon: "sun", tone: "gold" },
+  { label: "8月", href: "/months/8/", icon: "wave", tone: "aqua" },
+  { label: "9月", href: "/months/9/", icon: "moon", tone: "lavender" },
+  { label: "10月", href: "/months/10/", icon: "acorn", tone: "amber" },
+  { label: "11月", href: "/months/11/", icon: "berry", tone: "mauve" },
+  { label: "12月", href: "/months/12/", icon: "star", tone: "pearl" }
+];
+
+function renderMonthIcon(name) {
+  switch (name) {
+    case "snow":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v18"/><path d="m7.5 5.5 9 13"/><path d="m16.5 5.5-9 13"/><path d="M4 12h16"/></svg>`;
+    case "flower":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M12 6.2c1.4-2 4.6-1.1 4.6 1.4 0 1.6-1.1 2.4-2.6 3.1"/><path d="M17.8 12c2 1.4 1.1 4.6-1.4 4.6-1.6 0-2.4-1.1-3.1-2.6"/><path d="M12 17.8c-1.4 2-4.6 1.1-4.6-1.4 0-1.6 1.1-2.4 2.6-3.1"/><path d="M6.2 12C4.2 10.6 5.1 7.4 7.6 7.4c1.6 0 2.4 1.1 3.1 2.6"/></svg>`;
+    case "leaf":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-7 0-12 4.5-12 10a4 4 0 0 0 4 4c5.5 0 10-5 10-12V5Z"/><path d="M8.5 15.5c2-2 5-4.5 8-6.5"/></svg>`;
+    case "petal":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c1.6-2.2 4.6-2 5.8.4 1 1.9.4 4-1.7 5.5"/><path d="M18 13c2.4.2 3.8 2.9 2.5 5-1.1 1.8-3.3 2.1-5.6 1"/><path d="M12 18c-.5 2.4-3.4 3.7-5.4 2.2-1.7-1.2-1.7-3.5-.2-5.7"/><path d="M7.2 12C5 11.1 4.4 8.1 6 6.4 7.3 5 9.6 5.2 11.6 6.8"/><circle cx="12" cy="12" r="1.5"/></svg>`;
+    case "sprout":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-7"/><path d="M12 13c0-3.5 2.6-6 6-6 0 3.5-2.5 6-6 6Z"/><path d="M12 15c0-3.1-2.2-5.2-5.5-5.2 0 3 2.1 5.2 5.5 5.2Z"/></svg>`;
+    case "drop":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c3 4 5 6.6 5 9.3A5 5 0 0 1 7 13.3C7 10.6 9 8 12 4Z"/></svg>`;
+    case "sun":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 3.5v2.2"/><path d="M12 18.3v2.2"/><path d="m5.9 5.9 1.6 1.6"/><path d="m16.5 16.5 1.6 1.6"/><path d="M3.5 12h2.2"/><path d="M18.3 12h2.2"/><path d="m5.9 18.1 1.6-1.6"/><path d="m16.5 7.5 1.6-1.6"/></svg>`;
+    case "wave":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 10c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M3 15c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/></svg>`;
+    case "moon":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.8 4.8A7.5 7.5 0 1 0 19.2 15a6.5 6.5 0 0 1-3.4-10.2Z"/></svg>`;
+    case "acorn":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9.5c0-2 1.6-3.5 3.5-3.5S16 7.5 16 9.5"/><path d="M7.5 10h9"/><path d="M12 10c3 0 5 2.3 5 5.1 0 2.7-2.1 4.9-5 4.9s-5-2.2-5-4.9C7 12.3 9 10 12 10Z"/></svg>`;
+    case "berry":
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="13.5" r="3"/><circle cx="14.5" cy="14.5" r="3.2"/><path d="M12 8.5c1-1.7 2.4-2.8 4.5-3.3"/><path d="M10 8.5C8.6 7.2 7.8 6.2 7.5 4.5"/></svg>`;
+    default:
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4.5 1.8 3.7 4.1.6-3 2.9.7 4.2-3.6-2-3.6 2 .7-4.2-3-2.9 4.1-.6Z"/></svg>`;
+  }
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <section class="page-header">
+    <IconHeading level="h1" text="権利確定月から探す" variant="calendar" />
+    <p class="lead">
+      月ごとの株主優待一覧に進めます。気になる権利確定月を選んでください。
+    </p>
+  </section>
+
+  <section class="month-grid">
+    {months.map((month) => (
+      <a class="month-card" href={month.href}>
+        <span class:list={["month-icon", `month-icon-${month.tone}`]} set:html={renderMonthIcon(month.icon)} />
+        <h2>{month.label}</h2>
+      </a>
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 8px 0 30px;
+    max-width: 760px;
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.22;
+    color: var(--text);
+  }
+
+  .lead {
+    margin: 0;
+    font-size: 18px;
+    color: var(--muted);
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+
+  .month-card {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 26px 20px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+    text-align: center;
+  }
+
+  .month-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .month-card h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(26px, 5vw, 32px);
+  }
+
+  .month-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: #b4768f;
+  }
+
+  .month-icon :global(svg) {
+    width: 20px;
+    height: 20px;
+  }
+
+  .month-icon-ice { background: #eef6ff; color: #7095bf; }
+  .month-icon-blush { background: #fff1f5; color: #c67b97; }
+  .month-icon-mint { background: #eef8f2; color: #6da081; }
+  .month-icon-rose { background: #fff0f4; color: #ca728e; }
+  .month-icon-sage { background: #f1f6ed; color: #7d9a66; }
+  .month-icon-sky { background: #eef7fb; color: #6e98b7; }
+  .month-icon-gold { background: #fff6e6; color: #c1934f; }
+  .month-icon-aqua { background: #ecfbfa; color: #5f9c97; }
+  .month-icon-lavender { background: #f4f1fd; color: #8f7eb6; }
+  .month-icon-amber { background: #fff1e2; color: #bf8652; }
+  .month-icon-mauve { background: #f8eef6; color: #a06f97; }
+  .month-icon-pearl { background: #f7f7fb; color: #8b90a8; }
+</style>

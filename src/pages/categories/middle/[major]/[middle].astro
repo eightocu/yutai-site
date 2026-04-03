@@ -1,0 +1,269 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import IconHeading from "../../../../components/IconHeading.astro";
+import {
+  formatPercent,
+  formatPrice,
+  getBenefitsByCategoryNode,
+  getCategoryDefinitions,
+  getCategoryNodeHref,
+  getMiddleCategories,
+  getMiddleCategoryBySlugs,
+  slugifyCategory,
+} from "../../../../lib/benefits";
+
+export async function getStaticPaths() {
+  return getMiddleCategories().map((categoryNode) => ({
+    params: {
+      major: slugifyCategory(categoryNode.major || ""),
+      middle: slugifyCategory(categoryNode.name),
+    },
+    props: { categoryNode },
+  }));
+}
+
+const categoryNode =
+  Astro.props.categoryNode ??
+  getMiddleCategoryBySlugs(Astro.params.major ?? "", Astro.params.middle ?? "");
+const benefits = categoryNode ? getBenefitsByCategoryNode(categoryNode) : [];
+const smallNodes = categoryNode
+  ? getCategoryDefinitions()
+      .filter(
+        (item) => item.major === categoryNode.major && item.middle === categoryNode.name,
+      )
+      .map((item) => ({
+        level: "small" as const,
+        name: item.name,
+        major: item.major,
+        middle: item.middle,
+      }))
+  : [];
+
+const pageTitle = categoryNode
+  ? `${categoryNode.name}の株主優待一覧 | よくわかる株主優待`
+  : "カテゴリ一覧 | よくわかる株主優待";
+const pageDescription = categoryNode
+  ? `${categoryNode.name}に属する株主優待銘柄を一覧で確認できます。`
+  : "カテゴリ情報を確認できます。";
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  {categoryNode ? (
+    <>
+      <section class="page-header">
+        <p class="breadcrumb">
+          <a href={getCategoryNodeHref({ level: "major", name: categoryNode.major || "", major: categoryNode.major || "" })}>
+            {categoryNode.major}
+          </a>
+        </p>
+        <IconHeading level="h1" text={categoryNode.name} variant="category" />
+        <p>{categoryNode.name}に属する株主優待を一覧で確認できます。</p>
+        <div class="count-pill">掲載銘柄数 {benefits.length}件</div>
+      </section>
+
+      {smallNodes.length > 0 && (
+        <section class="child-section">
+          <h2>小分類</h2>
+          <div class="child-tags">
+            {smallNodes.map((child) => (
+              <a href={getCategoryNodeHref(child)}>{child.name}</a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section class="results-grid">
+        {benefits.map((item) => (
+          <a class="result-card" href={`/stocks/${item.company_code}/`}>
+            <div class="result-top">
+              <p class="result-code">{item.company_code}</p>
+              <p class="result-month">{item.record_month || "-"}</p>
+            </div>
+            <h2>{item.company_name}</h2>
+            <p class="result-category">{item.benefit_category || "-"}</p>
+            <dl class="result-meta">
+              <div>
+                <dt>最低取得額</dt>
+                <dd>{formatPrice(item.minimum_purchase_amount)}</dd>
+              </div>
+              <div>
+                <dt>優待の価値</dt>
+                <dd>{formatPrice(item.benefit_value)}</dd>
+              </div>
+              <div>
+                <dt>優待利回り</dt>
+                <dd>{formatPercent(item.benefit_yield)}</dd>
+              </div>
+              <div>
+                <dt>配当利回り</dt>
+                <dd>{formatPercent(item.dividend_yield_forecast || item.forecast_dividend_yield)}</dd>
+              </div>
+            </dl>
+          </a>
+        ))}
+      </section>
+    </>
+  ) : (
+    <section class="page-header">
+      <IconHeading level="h1" text="カテゴリが見つかりません" variant="category" />
+      <p>指定されたカテゴリは見つかりませんでした。</p>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 8px 0 24px;
+    max-width: 760px;
+  }
+
+  .breadcrumb {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: var(--soft);
+  }
+
+  .breadcrumb a {
+    color: var(--soft);
+  }
+
+  .page-header h1 {
+    margin: 0 0 10px;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .page-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .count-pill {
+    display: inline-flex;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .child-section {
+    margin-bottom: 28px;
+  }
+
+  .child-section h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: var(--soft);
+  }
+
+  .child-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .child-tags a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .result-card {
+    display: block;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: inherit;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .result-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .result-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .result-card h2 {
+    margin: 10px 0 8px;
+    font-size: 24px;
+    color: var(--text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-code {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  .result-month {
+    margin: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .result-category {
+    margin: 0 0 18px;
+    color: var(--muted);
+    min-height: 3.8em;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .result-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+  }
+
+  .result-meta div {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  dt {
+    font-size: 12px;
+    color: var(--soft);
+    margin-bottom: 4px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+</style>

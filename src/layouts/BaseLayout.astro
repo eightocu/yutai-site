@@ -1,0 +1,229 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = "よくわかる株主優待",
+  description = "株主優待の内容、権利確定月、最低取得額をわかりやすく整理したサイトです。",
+  canonical,
+  noindex = false
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/site-icon.svg" />
+    <link rel="apple-touch-icon" href="/site-icon.svg" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <div class="brand-lockup">
+          <h1>
+            <a href="/" class="brand-link">
+              <img src="/site-icon.svg" alt="" class="brand-icon" />
+              <span class="brand-text">よくわかる株主優待</span>
+            </a>
+          </h1>
+        </div>
+        <nav class="site-nav" aria-label="主要メニュー">
+          <a href="/">ホーム</a>
+          <a href="/tool/">絞り込み検索</a>
+          <a href="/stocks/">全銘柄一覧</a>
+          <a href="/months/">権利確定月</a>
+          <a href="/categories/">カテゴリ一覧</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© よくわかる株主優待</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :global(:root) {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-soft: #f7f9f8;
+    --line: #e7e9e8;
+    --line-strong: #8a918e;
+    --text: #222222;
+    --muted: #5f6663;
+    --soft: #8a918e;
+    --accent: #6f7672;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+  }
+
+  :global(body) {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  :global(a) {
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  :global(a:hover) {
+    color: var(--text);
+  }
+
+  :global(*),
+  :global(*::before),
+  :global(*::after) {
+    box-sizing: border-box;
+  }
+
+  .container {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 20px 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .site-header .container,
+  .site-footer .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .site-header .container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .brand-lockup {
+    margin: 0;
+  }
+
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .brand-icon {
+    display: block;
+    width: 30px;
+    height: auto;
+    border-radius: 999px;
+  }
+
+  .brand-text {
+    display: inline-block;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .site-footer p {
+    margin: 0;
+  }
+
+  .site-header a {
+    color: var(--text);
+  }
+
+  .site-header h1 {
+    margin: 0;
+    line-height: 1;
+  }
+
+  .site-nav {
+    width: min(920px, 100%);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 6px 8px;
+    color: var(--muted);
+    font-size: 14px;
+    border-bottom: 1px solid transparent;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .site-nav a:hover {
+    border-color: var(--line-strong);
+    color: var(--text);
+  }
+
+  .site-footer {
+    margin-top: 72px;
+    padding: 28px 0 40px;
+    border-top: 1px solid var(--line);
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  main.container {
+    padding: 64px 0 0;
+  }
+
+  @media (max-width: 720px) {
+    .site-header .container,
+    .site-footer .container {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .site-nav {
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .brand-link {
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 30px;
+    }
+  }
+</style>

@@ -1,17 +1,512 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import IconHeading from "../components/IconHeading.astro";
+import { getCategoryDefinitions, getCategoryNodeHref, slugifyCategory } from "../lib/benefits";
 
+const pageTitle = "よくわかる株主優待";
+const pageDescription = "株主優待の内容、権利確定月、最低取得額をわかりやすく整理したサイトです。";
+const updatedAt = "2026-04-01";
+
+const recordMonths = [
+  { label: "1月", href: "/months/1/" },
+  { label: "2月", href: "/months/2/" },
+  { label: "3月", href: "/months/3/" },
+  { label: "4月", href: "/months/4/" },
+  { label: "5月", href: "/months/5/" },
+  { label: "6月", href: "/months/6/" },
+  { label: "7月", href: "/months/7/" },
+  { label: "8月", href: "/months/8/" },
+  { label: "9月", href: "/months/9/" },
+  { label: "10月", href: "/months/10/" },
+  { label: "11月", href: "/months/11/" },
+  { label: "12月", href: "/months/12/" }
+];
+
+const monthOptions = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
+
+const themes = [
+  { title: "10万円以下で探す", description: "少額から狙いやすい株主優待をまとめます。", href: "/themes/under-100k/" },
+  { title: "QUOカード優待", description: "人気の優待カテゴリから探せます。", href: "/categories/quo-kado/" },
+  { title: "4月権利確定をチェック", description: "今月の権利確定銘柄を一覧で確認できます。", href: "/months/4/" }
+];
+
+const categories = getCategoryDefinitions().map((category) => ({
+  label: category.name,
+  href: `/categories/${slugifyCategory(category.name)}/`,
+}));
+
+const majorCategories = Array.from(
+  new Set(getCategoryDefinitions().map((category) => category.major)),
+)
+  .filter((major) => major !== "その他")
+  .map((major) => ({
+  label: major,
+  href: getCategoryNodeHref({ level: "major", name: major, major }),
+}));
+
+const categoryLinks = [
+  { label: "カテゴリ一覧", href: "/categories/" },
+  ...majorCategories,
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <div class="home-layout">
+    <div class="main-column">
+      <section class="section section-intro">
+        <div class="section-heading">
+          <IconHeading text="注目テーマ" variant="sparkle" />
+        </div>
+        <div class="theme-grid">
+          {themes.map((theme) => (
+            <a class="theme-card" href={theme.href}>
+              <h3>{theme.title}</h3>
+              <p>{theme.description}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <IconHeading text="株主優待 権利確定月" variant="calendar" />
+        </div>
+        <div class="month-links">
+          {recordMonths.map((month) => (
+            <a class="month-link" href={month.href}>{month.label}</a>
+          ))}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <IconHeading text="カテゴリ分類から探す" variant="category" />
+        </div>
+        <div class="major-links">
+          {categoryLinks.map((category) => (
+            <a class="major-link" href={category.href}>{category.label}</a>
+          ))}
+        </div>
+      </section>
+
+      <section class="section section-intro">
+        <div class="section-heading">
+          <IconHeading text="探し方から選ぶ" variant="guide" />
+        </div>
+        <div class="theme-grid intro-grid">
+          <a class="theme-card" href="/tool/">
+            <h3>絞り込み検索を使う</h3>
+            <p>月、カテゴリ、最低取得額、利回りから条件を組み合わせて探せます。</p>
+          </a>
+          <a class="theme-card" href="/stocks/">
+            <h3>全銘柄一覧を見る</h3>
+            <p>まずは全体を一覧で見たい方向けの入口です。</p>
+          </a>
+          <a class="theme-card" href="/months/">
+            <h3>権利確定月で探す</h3>
+            <p>月ごとの株主優待をまとめて見比べられます。</p>
+          </a>
+          <a class="theme-card" href="/categories/">
+            <h3>カテゴリから探す</h3>
+            <p>QUOカードやデジタルギフトなどのカテゴリ別に探せます。</p>
+          </a>
+        </div>
+      </section>
+
+      <p class="updated">最終更新日: {updatedAt}</p>
+    </div>
+
+    <aside class="sidebar">
+      <section class="sidebar-section">
+        <IconHeading text="株主優待を検索" variant="search" />
+        <form class="search-form" action="/search/" method="get">
+          <input type="search" name="q" placeholder="企業名・銘柄コード・カテゴリ" />
+          <button type="submit">検索</button>
+        </form>
+      </section>
+
+      <section class="sidebar-section filter-sidebar">
+        <IconHeading text="絞り込み検索" variant="filter" />
+        <form class="sidebar-filter-form" action="/tool/" method="get">
+          <div class="filter-field">
+            <label for="sidebar-filter-keyword">キーワード</label>
+            <input
+              id="sidebar-filter-keyword"
+              type="search"
+              name="q"
+              placeholder="企業名・銘柄コード・優待"
+            />
+          </div>
+
+          <div class="filter-field">
+            <label for="sidebar-filter-month">権利確定月</label>
+            <select id="sidebar-filter-month" name="month">
+              <option value="">すべて</option>
+              {monthOptions.map((month) => (
+                <option value={month}>{month}月</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="sidebar-filter-category">カテゴリ</label>
+            <select id="sidebar-filter-category" name="category">
+              <option value="">すべて</option>
+              {categories.map((category) => (
+                <option value={category.label}>{category.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="sidebar-filter-amount">最低取得額</label>
+            <select id="sidebar-filter-amount" name="amount">
+              <option value="">すべて</option>
+              <option value="100000">10万円以下</option>
+              <option value="300000">30万円以下</option>
+              <option value="500000">50万円以下</option>
+              <option value="1000000">100万円以下</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="sidebar-filter-yield">総合利回り</label>
+            <select id="sidebar-filter-yield" name="yield">
+              <option value="">すべて</option>
+              <option value="1">1%以上</option>
+              <option value="2">2%以上</option>
+              <option value="3">3%以上</option>
+              <option value="5">5%以上</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button type="submit" class="filter-submit">絞り込み検索へ</button>
+            <a class="filter-reset-link" href="/tool/">条件をリセット</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="sidebar-section">
+        <IconHeading text="株主優待をさがす" variant="bookmark" />
+        <div class="sidebar-links">
+          <a href="/tool/">絞り込み検索</a>
+          <a href="/stocks/">全銘柄一覧</a>
+          <a href="/months/">権利確定月から探す</a>
+          <a href="/categories/">カテゴリ一覧</a>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <IconHeading text="カテゴリ" variant="category" />
+        <div class="sidebar-tags">
+          {categories.map((category) => (
+            <a class="tag-link" href={category.href}>{category.label}</a>
+          ))}
+        </div>
+      </section>
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .updated {
+    margin: 0;
+    margin-top: 36px;
+    color: var(--soft);
+    font-size: 14px;
+  }
+
+  .sidebar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .tag-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .tag-link:hover {
+    border-color: var(--line-strong);
+    color: var(--muted);
+  }
+
+  .home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .main-column {
+    min-width: 0;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .section {
+    padding: 36px 0 0;
+  }
+
+  .section-heading {
+    margin-bottom: 16px;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 30px);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .intro-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .theme-card {
+    display: block;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .theme-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .theme-card h3 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 22px;
+    line-height: 1.45;
+  }
+
+  .theme-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .major-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .major-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .month-links {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .month-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
+    border: 1px solid var(--line);
+    font-size: 14px;
+  }
+
+  .month-link:hover {
+    border-color: var(--line-strong);
+    color: var(--accent);
+  }
+
+  .sidebar-section {
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .sidebar-section h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .search-form {
+    display: grid;
+    gap: 10px;
+  }
+
+  .search-form input {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .search-form button {
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .filter-sidebar {
+    padding: 18px;
+  }
+
+  .sidebar-filter-form {
+    display: grid;
+    gap: 16px;
+  }
+
+  .filter-field {
+    display: grid;
+    gap: 8px;
+  }
+
+  .filter-field label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .sidebar-filter-form input,
+  .sidebar-filter-form select {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.2;
+    appearance: none;
+  }
+
+  .sidebar-filter-form select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--text) 50%),
+      linear-gradient(135deg, var(--text) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) calc(50% - 3px),
+      calc(100% - 12px) calc(50% - 3px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 38px;
+  }
+
+  .filter-actions {
+    display: grid;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .filter-submit,
+  .filter-reset-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: var(--surface-soft);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .sidebar-links {
+    display: grid;
+    gap: 10px;
+  }
+
+  .sidebar-links a {
+    color: var(--muted);
+  }
+
+  .sidebar-links a:hover {
+    color: var(--text);
+  }
+
+  @media (max-width: 900px) {
+    .home-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+    }
+
+    .intro-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .month-links {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .intro-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .month-links {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .theme-card {
+      padding: 18px;
+    }
+  }
+</style>
